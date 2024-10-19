@@ -35,7 +35,7 @@ if (isset($_POST['product_id'])) {
         <?php
         $result = $conn->query("SELECT * FROM products");
         while ($product = $result->fetch_assoc()) {
-            $image_url = $product['image_url'] ?: 'https://via.placeholder.com/250'; // Dummy image if none exists
+            $image_url = $product['image_url'] ?: 'https://via.placeholder.com/250'; // Fallback image if none exists
             echo "
             <div class='product'>
                 <img src='{$image_url}' alt='{$product['name']}' class='product-image'>
@@ -49,6 +49,37 @@ if (isset($_POST['product_id'])) {
         }
         ?>
     </div>
+
+    <h2>Featured Products</h2>
+    <div class="carousel">
+        <?php
+        // Fetch product images for the carousel
+        $carouselResult = $conn->query("SELECT image_url, name FROM products LIMIT 5");
+        if ($carouselResult->num_rows > 0) {
+            $first = true;
+            while ($row = $carouselResult->fetch_assoc()) {
+                $image_url = $row['image_url'] ?: 'https://via.placeholder.com/400x200';
+                $display = $first ? 'block' : 'none'; // Show the first image by default
+                $first = false;
+                echo "<img src='{$image_url}' alt='{$row['name']}' class='carousel-image' style='display: {$display};'>";
+            }
+        } else {
+            echo "<p>No products available for the carousel.</p>";
+        }
+        ?>
+    </div>
+
+    <script>
+        let currentImage = 0;
+        const images = document.querySelectorAll('.carousel-image');
+
+        function showNextImage() {
+            images[currentImage].style.display = 'none'; // Hide current image
+            currentImage = (currentImage + 1) % images.length; // Move to the next image (loop back to the first if needed)
+            images[currentImage].style.display = 'block'; // Show the next image
+        }
+        setInterval(showNextImage, 3000); // Change image every 3 seconds
+    </script>
 
     <?php include 'partials/footer.php'; ?>
 </body>

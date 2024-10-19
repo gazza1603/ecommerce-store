@@ -2,53 +2,66 @@
 session_start();
 include 'db/db.php';
 
-// Redirect to login if the user is not logged in
+// Ensure the user is logged in
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit();
 }
 
 $user_id = $_SESSION['user_id'];
-$is_admin = $_SESSION['is_admin'];
 
-// Fetch orders for the current user or all orders if admin
-$sql = $is_admin ? "SELECT * FROM orders" : "SELECT * FROM orders WHERE user_id = $user_id";
-$orders = $conn->query($sql);
+// Fetch user orders
+$stmt = $conn->prepare(
+    "SELECT orders.id, orders.order_date, products.name, order_items.quantity 
+     FROM orders 
+     JOIN order_items ON orders.id = order_items.order_id 
+     JOIN products ON order_items.product_id = products.id 
+     WHERE orders.user_id = ? 
+     ORDER BY orders.order_date DESC"
+);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$orders = $stmt->get_result();
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <title>User Dashboard - Your Orders</title>
     <link rel="stylesheet" href="assets/css/styles.css">
 </head>
 <body>
     <?php include 'partials/header.php'; ?>
 
-    <h2>Your Orders</h2>
-    <ul>
-        <?php
-        while ($order = $orders->fetch_assoc()) {
-            echo "<li>Order #{$order['id']} - {$order['order_date']}";
-            echo "<ul>";
+    <div class="orders-container">
+        <h2>Your Orders</h2>
 
-            $order_id = $order['id'];
-            $items = $conn->query(
-                "SELECT products.name, order_items.quantity 
-                FROM order_items 
-                JOIN products ON order_items.product_id = products.id 
-                WHERE order_items.order_id = $order_id"
-            );
-
-            while ($item = $items->fetch_assoc()) {
-                echo "<li>{$item['name']} (x{$item['quantity']})</li>";
-            }
-
-            echo "</ul></li>";
-        }
-        ?>
-    </ul>
+        <?php if ($orders->num_rows > 0): ?>
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th>Order #</th>
+                        <th>Order Date</th>
+                        <th>Products</th>
+                        <th>Quantity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while ($order = $orders->fetch_assoc()): ?>
+                        <tr>
+                            <td>#<?= $order['id'] ?></td>
+                            <td><?= $order['order_date'] ?></td>
+                            <td><?= $order['name'] ?></td>
+                            <td><?= $order['quantity'] ?></td>
+                        </tr>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
+        <?php else: ?>
+            <p>You have no orders yet.</p>
+        <?php endif; ?>
+    </div>
 
     <?php include 'partials/footer.php'; ?>
 </body>
