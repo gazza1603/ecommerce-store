@@ -1,0 +1,49 @@
+# Composer dependencies
+/vendor/
+/composer.lock
+
+# Node.js dependencies
+/node_modules/
+/package-lock.json
+/yarn.lock
+
+# Environment variables and config files
+.env
+.env.local
+.env.*.backup
+
+# IDE and editor settings
+.vscode/
+.idea/
+*.sublime-workspace
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Logs and caches
+*.log
+/cache/
+/storage/logs/
+/storage/framework/cache/
+/storage/framework/sessions/
+/storage/framework/views/
+
+# Laravel or PHP frameworks (optional)
+/bootstrap/cache/
+/public/storage/
+
+# PHPUnit test results
+.phpunit.result.cache
+
+# XAMPP or local development server files
+*.bak
+*.swp
+*.tmp
+
+# Ignore minified and built assets
+*.min.css
+*.min.js
+
+# MacOS-specific metadata
+.AppleDouble
