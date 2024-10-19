@@ -2,7 +2,7 @@
 session_start();
 include 'db/db.php';
 
-// Fetch product details for items in the cart
+// Fetch product details from the cart session
 $cart_items = [];
 $total_amount = 0;
 
@@ -22,7 +22,16 @@ if (isset($_SESSION['cart'])) {
 if (isset($_GET['remove'])) {
     $product_id = $_GET['remove'];
     unset($_SESSION['cart'][$product_id]);
-    header('Location: cart.php'); // Redirect to refresh the cart
+    header('Location: cart.php');
+    exit();
+}
+
+// Handle cart update
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_cart'])) {
+    foreach ($_POST['quantity'] as $product_id => $quantity) {
+        $_SESSION['cart'][$product_id] = max(1, (int)$quantity); // Ensure quantity is at least 1
+    }
+    header('Location: cart.php');
     exit();
 }
 ?>
@@ -39,42 +48,49 @@ if (isset($_GET['remove'])) {
 
     <div class="cart-container">
         <h2>Your Cart</h2>
+
         <?php if (!empty($cart_items)): ?>
-            <table class="cart-table">
-                <thead>
-                    <tr>
-                        <th>Product</th>
-                        <th>Price</th>
-                        <th>Quantity</th>
-                        <th>Total</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($cart_items as $item): ?>
-                        <?php $total = $item['price'] * $item['quantity']; ?>
+            <form method="POST" action="cart.php">
+                <table class="cart-table">
+                    <thead>
                         <tr>
-                            <td><?= $item['name'] ?></td>
-                            <td>$<?= number_format($item['price'], 2) ?></td>
-                            <td><?= $item['quantity'] ?></td>
-                            <td>$<?= number_format($total, 2) ?></td>
-                            <td>
-                                <a href="cart.php?remove=<?= $item['id'] ?>" class="remove-link">Remove</a>
-                            </td>
+                            <th>Product</th>
+                            <th>Price</th>
+                            <th>Quantity</th>
+                            <th>Total</th>
+                            <th>Action</th>
                         </tr>
-                    <?php endforeach; ?>
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="3" class="grand-total-label">Grand Total</td>
-                        <td class="grand-total-value">$<?= number_format($total_amount, 2) ?></td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
-            <div class="checkout-button-container">
-                <a href="checkout.php" class="checkout-button">Proceed to Checkout</a>
-            </div>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($cart_items as $item): ?>
+                            <tr>
+                                <td><?= $item['name'] ?></td>
+                                <td>$<?= number_format($item['price'], 2) ?></td>
+                                <td>
+                                    <input type="number" name="quantity[<?= $item['id'] ?>]" value="<?= $item['quantity'] ?>" min="1">
+                                </td>
+                                <td>$<?= number_format($item['price'] * $item['quantity'], 2) ?></td>
+                                <td>
+                                    <a href="cart.php?remove=<?= $item['id'] ?>" class="remove-link">Remove</a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="total-label">Total:</td>
+                            <td class="total-value">$<?= number_format($total_amount, 2) ?></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <div class="cart-actions">
+                    <button type="submit" name="update_cart" class="update-button">Update Cart</button>
+                    <a href="checkout.php" class="place-order-button">Place Order</a>
+                </div>
+
+            </form>
         <?php else: ?>
             <p>Your cart is empty.</p>
         <?php endif; ?>
